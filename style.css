@@ -139,6 +139,12 @@ details.sec summary{cursor:pointer}
 .vrow details{margin:2px 0 0}.vrow details summary{font-size:13px;cursor:pointer;width:max-content}.vrow details p{margin:4px 0}.vrow small{display:block}
 .vrow mark,.card mark{background:#f3e08a;color:#2b2500;border-radius:3px;padding:0 2px}
 .tabs .btn{padding:6px 14px}
+.vlevels{display:grid;gap:8px;margin-top:8px}
+.vlevel{display:grid;grid-template-columns:5.2em minmax(60px,1fr) 5.5em auto;gap:10px;align-items:center}.vlevel .tag{justify-self:start}.vlevel .bar{margin:0}.vlevel .num{text-align:right;font-variant-numeric:tabular-nums}
+.vbtns{display:flex;gap:6px;flex-wrap:wrap}.vbtns .btn{padding:4px 12px;font-size:14px}.opts-row{gap:8px}.opts-row select{padding:4px 8px;font-size:14px}
+.vzh small{display:block}.exline{font-size:18px;line-height:1.6}.okc{color:var(--main);font-weight:600}.badc{color:var(--bad);font-weight:600}
+.opt .en{display:block}
+@media(max-width:600px){.vlevel{grid-template-columns:5.2em minmax(40px,1fr) 5em}.vbtns{grid-column:1/-1}}
 
 /* 云端 */
 .gate{max-width:520px}
