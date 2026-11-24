@@ -2,7 +2,7 @@
 // 登录 → 取题库 → 同步进度 → 启动页面程序
 (() => {
   const FS = "https://firestore.googleapis.com/v1/projects/dictation-30ff5/databases/(default)/documents", ROOT = new URL("./", location.href).pathname;
-  const KEYS = ["tcf.listening.v1", "tcf.reading.v1", "tcf.writing.v1", "tcf.speaking.v1"], META = "tcf.sync";
+  const KEYS = ["tcf.listening.v1", "tcf.reading.v1", "tcf.writing.v1", "tcf.speaking.v1"], META = "tcf.sync2";
   const me = document.currentScript, BOOT = me.dataset.boot.split(" "), HOME = BOOT.at(-1) === "home.js";
   const app = document.getElementById("app");
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -30,7 +30,7 @@
     navigator.serviceWorker.controller.postMessage(msg, [ch.port2]);
   });
   function loginScreen(msg = "") {
-    screen(`<p>这是私人练习网站，只有主人的 Google 账号能打开题库。</p><button class="primary" id="in">用 Google 登录</button>${msg ? `<p class="note">${esc(msg)}</p>` : ""}`);
+    screen(`<p>这是私人练习网站，只有受邀的 Google 账号能打开题库。</p><button class="primary" id="in">用 Google 登录</button>${msg ? `<p class="note">${esc(msg)}</p>` : ""}`);
     document.getElementById("in").onclick = async () => {
       try { await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); location.reload(); }
       catch (e) { loginScreen(/popup/.test(e.code ?? "") ? "登录窗口被关掉或拦住了，请允许弹出窗口再试。" : `登录失败：${e.code ?? e.message}`); }
@@ -60,15 +60,31 @@
     if (typeof a === "string" && typeof b === "string") return a.length >= b.length ? a : b;
     return a;
   }
-  const api = async (path, opt = {}) => fetch(`${FS}/tcf_state${path}`, { ...opt, headers: { ...opt.headers, Authorization: `Bearer ${await idToken()}` } });
-  async function cloudState() {
-    const r = await api("", { signal: AbortSignal.timeout(8000) });
+  const api = async (path, opt = {}, base = `tcf_users/${user.uid}/state`) => fetch(`${FS}/${base}${path}`, { ...opt, headers: { ...opt.headers, Authorization: `Bearer ${await idToken()}` } });
+  async function cloudState(base) {
+    const r = await api("", { signal: AbortSignal.timeout(8000) }, base);
     if (!r.ok) throw new Error(r.status);
     return Object.fromEntries(((await r.json()).documents ?? []).map((d) => [d.name.split("/").pop(), { rev: d.updateTime, value: d.fields.v.stringValue }]));
   }
   const show = (x) => { last = x; const el = document.getElementById("sync"); if (el) el.textContent = x; };
+  // 同一台设备换了账号：把上一个人的本机进度收起来，换成自己的
+  function switchUser() {
+    const m = meta();
+    if (m.uid === user.uid) return;
+    if (m.uid) {
+      set(`tcf.backup.${m.uid}`, JSON.stringify({ m, v: Object.fromEntries(KEYS.map((k) => [k, localStorage.getItem(k)])) }));
+      KEYS.forEach((k) => localStorage.removeItem(k));
+    }
+    const b = m.uid && get(`tcf.backup.${user.uid}`, null);
+    if (b) { KEYS.forEach((k) => b.v[k] && set(k, b.v[k])); localStorage.removeItem(`tcf.backup.${user.uid}`); }
+    set(META, JSON.stringify(b ? b.m : { uid: user.uid, rev: {}, dirty: {} }));
+  }
   async function pull() {
     const cloud = await cloudState();
+    if (!Object.keys(cloud).length) {      // 旧版只有一份共用进度（只有主人能读）：搬到自己名下
+      const old = await cloudState("tcf_state").catch(() => ({}));
+      for (const k of KEYS) if (old[k]) set(k, JSON.stringify(merge(get(k, undefined), JSON.parse(old[k].value))));
+    }
     for (const k of KEYS) {
       const c = cloud[k], m = meta(), local = localStorage.getItem(k);
       if (!c) { if (local) editMeta((x) => { x.rev[k] = ""; x.dirty[k] = 1; }); continue; }
@@ -143,11 +159,12 @@
     const m = await ask("manifest");
     if (m.err && m.err !== 503 && !(m.err === 404)) {
       if (m.err === 401 && m.cached) { /* 断网时用本机题库 */ } else {
-        screen(`<p>${esc(user?.email ?? "")} 没有权限打开题库。</p><p class="muted">如果这是主人的账号，请检查 Firebase 规则。（${esc(m.err)}）</p><button id="out">换一个账号</button>`);
+        screen(`<p>${esc(user?.email ?? "")} 没有权限打开题库。</p><p class="muted">请用受邀的那个账号登录，或请主人检查权限。（${esc(m.err)}）</p><button id="out">换一个账号</button>`);
         document.getElementById("out").onclick = signOut; return;
       }
     } else if (m.err === 404) return screen(`<p>题库还没有上传。</p>`);
     else if (m.err !== undefined && !m.cached) return screen(`<p>没有网络，这台设备上也还没有题库。</p>`);
+    if (user) switchUser();
     if (user) try { await pull(); show("进度已同步"); } catch { show("没连上，用这台设备上的进度"); }
     watch();
     try { for (const b of BOOT) if (CAPTURE[b]) CAPTURE[b](); else await script(b); }
