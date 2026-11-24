@@ -44,12 +44,18 @@ function speaking() {
   return panel("speaking.html", "口语", `${m.uniq} 题不重复，${Object.entries(m.tasks).map(([t, c]) => `Tâche ${t}：${c}`).join("，")}，快速套 ${m.quick}`,
     [fact(n(s.star), "收藏")], bar("练过", n(s.done), m.uniq, "speaking.html"), [["speaking.html", "开始练", 1]]);
 }
+function vocab() {
+  const m = window.TCF_META_VOCAB, s = read("tcf.vocab.v1");
+  const ok = Object.values(s.mem ?? {}).filter((x) => x.b > 0).length, due = Object.values(s.mem ?? {}).filter((x) => x.d <= Date.now()).length;
+  return panel("vocab.html", "词汇库", `听力+阅读 ${m.lr} 词，写作+口语 ${m.ws} 词，短语 ${m.phrases}`,
+    [fact(ok, "认识"), fact(due, "该复习")], "", [["vocab.html#/lr", "听力 + 阅读", 1], ["vocab.html#/ws", "写作 + 口语"], ["vocab.html#/ph", "短语"]]);
+}
 function home() {
-  if (!window.TCF_L || !window.TCF_R || !window.TCF_META_WRITING || !window.TCF_META_SPEAKING) return;   // 手机版还没导入题库
+  if (!window.TCF_L || !window.TCF_R || !window.TCF_META_WRITING || !window.TCF_META_SPEAKING || !window.TCF_META_VOCAB) return;   // 手机版还没导入题库
   app.innerHTML = `<header><h1>TCF Canada 练习</h1><button id="theme" aria-label="切换深浅色">◐</button></header><main class="hub">
     ${tests("listening.html", "听力", "tcf.listening.v1", window.TCF_L, 35)}
     ${tests("reading.html", "阅读", "tcf.reading.v1", window.TCF_R, 60)}
-    ${writing()}${speaking()}</main>`;
+    ${writing()}${speaking()}${vocab()}</main>`;
 }
 app.addEventListener("click", (e) => {
   if (e.target.id !== "theme") return;

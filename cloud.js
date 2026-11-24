@@ -2,7 +2,7 @@
 // 登录 → 取题库 → 同步进度 → 启动页面程序
 (() => {
   const FS = "https://firestore.googleapis.com/v1/projects/dictation-30ff5/databases/(default)/documents", ROOT = new URL("./", location.href).pathname;
-  const KEYS = ["tcf.listening.v1", "tcf.reading.v1", "tcf.writing.v1", "tcf.speaking.v1", "tcf.memo.v1"], META = "tcf.sync2";
+  const KEYS = ["tcf.listening.v1", "tcf.reading.v1", "tcf.writing.v1", "tcf.speaking.v1", "tcf.memo.v1", "tcf.vocab.v1"], META = "tcf.sync2";
   const me = document.currentScript, BOOT = me.dataset.boot.split(" "), HOME = BOOT.at(-1) === "home.js";
   const app = document.getElementById("app");
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));

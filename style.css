@@ -129,6 +129,16 @@ details.sec summary{cursor:pointer}
 .sheet td{vertical-align:top}.hidef .sheet .f{visibility:hidden}
 @media(max-width:600px){.sheet .f{display:none}.sheet td,.sheet th{padding:6px 4px}}
 @media print{header,.noprint{display:none}main{max-width:none;padding:0}.sheet{font-size:11px}.sheet tr{break-inside:avoid}body{background:#fff;color:#000}}
+/* 词汇库 */
+.vrow{border-bottom:1px solid var(--line);padding:8px 0}
+.vmain{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px}
+.vw{font-size:18px}.vw .art,.word .art{color:var(--soft);font-weight:400;font-size:.8em}.vpos{font-size:13px}.vzh{flex:1;min-width:120px}
+.vn{font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.vmark{display:flex;gap:4px}.vmark button{padding:2px 9px;font-size:13px}.vmark [data-mark="1"][aria-pressed=true]{background:var(--main-soft);border-color:var(--main);color:var(--main)}.vmark [data-mark="0"][aria-pressed=true]{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+.vrow.known .vw,.vrow.known .vzh{opacity:.55}
+.vrow details{margin:2px 0 0}.vrow details summary{font-size:13px;cursor:pointer;width:max-content}.vrow details p{margin:4px 0}.vrow small{display:block}
+.vrow mark,.card mark{background:#f3e08a;color:#2b2500;border-radius:3px;padding:0 2px}
+.tabs .btn{padding:6px 14px}
 
 /* 云端 */
 .gate{max-width:520px}
