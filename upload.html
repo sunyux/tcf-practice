@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>上传题库到自己的 Firestore</title>
+<link rel="stylesheet" href="style.css">
+<body><header><h1>上传题库到自己的 Firestore</h1></header><main>
+<p>给主人用：选电脑上的题库文件夹，传到自己的 Firestore。别的账号没有权限。中断了再选一次会接着传。</p>
+<p><button id="in" class="primary">1. 用 Google 登录</button> <button id="go" disabled>2. 选题库文件夹并上传</button><input id="dir" type="file" webkitdirectory multiple hidden></p>
+<p id="msg" role="status"></p><div class="bar"><i id="bar" style="width:0"></i></div></main>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id), say = (t) => { $("msg").textContent = t; };
+const auth = firebase.initializeApp(FIREBASE_CONFIG, "tcf").auth();
+const FS = "https://firestore.googleapis.com/v1/projects/dictation-30ff5/databases/(default)/documents/tcf_files";
+const call = async (path, opt = {}) => fetch(FS + path, { ...opt, headers: { "Content-Type": "application/json", Authorization: `Bearer ${await auth.currentUser.getIdToken()}` } });
+auth.onAuthStateChanged((u) => { $("go").disabled = !u; if (u) say(`已登录：${u.email}`); });
+$("in").onclick = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch((e) => say(`登录失败：${e.code}`));
+const b64 = (buf) => new Promise((res) => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.readAsDataURL(new Blob([buf])); });
+$("go").onclick = () => $("dir").click();
+$("dir").onchange = async () => {
+  const files = new Map([...$("dir").files].map((f) => [f.name, f])); $("dir").value = "";
+  if (!files.size) return;
+  $("go").disabled = true;
+  try {
+    if (!files.has("docs.json") || !files.has("manifest.json")) throw new Error("选错文件夹了：里面应该有 docs.json 和 manifest.json");
+    const docs = JSON.parse(await files.get("docs.json").text()), manifest = await files.get("manifest.json").text();
+    const lost = docs.filter((d) => !files.has(d)); if (lost.length) throw new Error(`文件夹里缺 ${lost.length} 个文件`);
+    say("正在看已经传了哪些…");
+    const have = new Set(); let page = "";
+    do {
+      const r = await call(`?pageSize=300&mask.fieldPaths=n${page && `&pageToken=${encodeURIComponent(page)}`}`);
+      if (!r.ok) throw new Error(r.status === 403 ? "没有权限：请先在 Firebase 里发布新规则，并用规则里写的那个账号登录" : `HTTP ${r.status}`);
+      const j = await r.json(); (j.documents ?? []).forEach((d) => have.add(d.name.split("/").pop())); page = j.nextPageToken ?? "";
+    } while (page);
+    const todo = docs.filter((d) => !have.has(d)); let done = docs.length - todo.length;
+    const worker = async () => {
+      for (let name; (name = todo.shift());) {
+        const body = JSON.stringify({ fields: { d: { bytesValue: await b64(await files.get(name).arrayBuffer()) } } });
+        for (let k = 0; ; k++) {
+          const r = await call(`/${name}`, { method: "PATCH", body }).catch(() => null);
+          if (r?.ok) break;
+          if (k === 4 || r?.status === 403) throw new Error(r ? `${name}：HTTP ${r.status}` : "网络断了，再点一次会接着传");
+          await new Promise((s) => setTimeout(s, 1500 * (k + 1)));
+        }
+        done++; say(`已传 ${done}/${docs.length}`); $("bar").style.width = `${(done / docs.length) * 100}%`;
+      }
+    };
+    await Promise.all(Array.from({ length: 5 }, worker));
+    const r = await call("/manifest", { method: "PATCH", body: JSON.stringify({ fields: { v: { stringValue: manifest } } }) });
+    if (!r.ok) throw new Error(`目录：HTTP ${r.status}`);
+    say(`全部传完：${docs.length} 个文档。可以打开首页做题了。`); $("bar").style.width = "100%";
+  } catch (e) { say(e.message); $("go").disabled = false; }
+};
+</script></body></html>
