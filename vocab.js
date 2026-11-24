@@ -98,8 +98,8 @@ const byName = () => new Map(LIB[lib].list.map((w) => [w.w, w]));
 function keep() {
   const x = run;
   if (!x) return;
-  if (x.queue.length) store.s[sid(x.kind, x.lv)] = { i: x.items.map((w) => w.w), q: x.queue.map((w) => w.w), m: [...x.missed], d: x.done, t: x.total };
-  else delete store.s[sid(x.kind, x.lv)];
+  if (x.queue.length) store.s[sid(x.kind, x.lv)] = { i: x.items.map((w) => w.w), q: x.queue.map((w) => w.w), m: [...x.missed], d: x.done, t: x.total, at: Date.now() };
+  else store.s[sid(x.kind, x.lv)] = { q: [], at: Date.now() };      // 留个记号，别的设备合并时知道已做完
   save();
 }
 function start(kind, lv, fresh) {
@@ -201,7 +201,7 @@ function route() {
   scrollTo(0, 0);
 }
 // 换了“测多少、测哪些”，没做完的旧测验作废
-function delete_tests() { for (const k of Object.keys(store.s)) if (k.endsWith("/test")) delete store.s[k]; }
+function delete_tests() { for (const k of Object.keys(store.s)) if (k.endsWith("/test")) store.s[k] = { q: [], at: Date.now() }; }
 const acts = {
   theme() { localStorage.setItem("tcf.theme", document.documentElement.dataset.theme === "dark" ? "light" : "dark"); applyTheme(); },
   more() { shown += PAGE; list(); }, show, good: () => grade(true), bad: () => grade(false), cont: () => next(), again(b) { start(b.dataset.kind, b.dataset.lv, true); },

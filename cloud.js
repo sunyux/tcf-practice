@@ -55,6 +55,7 @@
       const seen = new Set();
       return [...a, ...b].filter((x) => { const k = JSON.stringify(x); return !seen.has(k) && seen.add(k); }).sort((x, y) => (x?.at ?? 0) - (y?.at ?? 0));
     }
+    if (Array.isArray(a.q) && Array.isArray(b.q)) return (b.at ?? 0) > (a.at ?? 0) ? b : a;      // 没做完的一组：不能拼，整组取较新的
     if (typeof a === "object" && typeof b === "object" && !Array.isArray(a) && !Array.isArray(b))
       return Object.fromEntries([...new Set([...Object.keys(b), ...Object.keys(a)])].map((k) => [k, merge(a[k], b[k])]));
     if (typeof a === "string" && typeof b === "string") return a.length >= b.length ? a : b;
@@ -126,7 +127,7 @@
     try {
       const cloud = await cloudState(), m = meta(), changed = KEYS.filter((k) => cloud[k] && cloud[k].rev !== (m.rev[k] ?? ""));
       if (!changed.length) return;
-      if (/^(#\/?)?$/.test(location.hash)) return location.reload();
+      if (/^(#\/?(lr|ws|ph)?)?$/.test(location.hash)) return location.reload();
       changed.forEach((k) => stopped.add(k)); banner();
     } catch { /* 断网 */ }
   }
