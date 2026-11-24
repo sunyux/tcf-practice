@@ -30,7 +30,7 @@ function tests(page, name, key, d, min) {
     [fact(best || "–", "模考最高分"), fact(answered, "整套练习已答"), fact(n(s.wrong), "错题"), fact(n(s.star), "收藏")],
     lv.map(([l, c]) => bar(l, done(l), c, `${page}#/level/${l}`, `lv-${l}`)).join(""),
     [go ? [`${page}#/exam/${go}`, `继续模考 ${go.replace("test", "Test ")}`, 1] : next && [`${page}#/level/${next}`, `练 ${next}`, 1],
-      n(s.wrong) && [`${page}#/wrong`, "练错题"], [page, "全部"]]);
+      n(s.wrong) && [`${page}#/wrong`, "练错题"], [page, "全部"], ["memo.html#/", "背题"]]);
 }
 function writing() {
   const m = window.TCF_META_WRITING, s = read("tcf.writing.v1");

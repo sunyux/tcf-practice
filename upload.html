@@ -3,7 +3,7 @@
 <link rel="stylesheet" href="style.css">
 <body><header><h1>上传题库到自己的 Firestore</h1></header><main>
 <p>给主人用：选电脑上的题库文件夹，传到自己的 Firestore。别的账号不能上传。中断了再选一次会接着传。</p>
-<p><button id="in" class="primary">1. 用 Google 登录</button> <button id="go" disabled>2. 选题库文件夹并上传</button><input id="dir" type="file" webkitdirectory multiple hidden></p>
+<p><button id="in" class="primary">1. 用 Google 登录</button> <button id="go" disabled>2. 选题库文件夹并上传</button><input id="dir" type="file" webkitdirectory multiple hidden> <label class="muted">或只选新文件 <input id="some" type="file" multiple></label></p>
 <p id="msg" role="status"></p><div class="bar"><i id="bar" style="width:0"></i></div></main>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -18,14 +18,13 @@ auth.onAuthStateChanged((u) => { $("go").disabled = !u; if (u) say(`已登录：
 $("in").onclick = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch((e) => say(`登录失败：${e.code}`));
 const b64 = (buf) => new Promise((res) => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.readAsDataURL(new Blob([buf])); });
 $("go").onclick = () => $("dir").click();
-$("dir").onchange = async () => {
-  const files = new Map([...$("dir").files].map((f) => [f.name, f])); $("dir").value = "";
+$("dir").onchange = $("some").onchange = async (e) => {
+  const files = new Map([...e.target.files].map((f) => [f.name, f])); e.target.value = "";
   if (!files.size) return;
   $("go").disabled = true;
   try {
     if (!files.has("docs.json") || !files.has("manifest.json")) throw new Error("选错文件夹了：里面应该有 docs.json 和 manifest.json");
     const docs = JSON.parse(await files.get("docs.json").text()), manifest = await files.get("manifest.json").text();
-    const lost = docs.filter((d) => !files.has(d)); if (lost.length) throw new Error(`文件夹里缺 ${lost.length} 个文件`);
     say("正在看已经传了哪些…");
     const have = new Set(); let page = "";
     do {
@@ -33,6 +32,7 @@ $("dir").onchange = async () => {
       if (!r.ok) throw new Error(r.status === 403 ? "没有权限：请先在 Firebase 里发布新规则，并用规则里写的那个账号登录" : `HTTP ${r.status}`);
       const j = await r.json(); (j.documents ?? []).forEach((d) => have.add(d.name.split("/").pop())); page = j.nextPageToken ?? "";
     } while (page);
+    const lost = docs.filter((d) => !have.has(d) && !files.has(d)); if (lost.length) throw new Error(`还缺 ${lost.length} 个文件，请选整个文件夹`);
     const todo = docs.filter((d) => !have.has(d)); let done = docs.length - todo.length;
     const worker = async () => {
       for (let name; (name = todo.shift());) {

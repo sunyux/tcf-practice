@@ -51,7 +51,7 @@ function home() {
   const levels = window.TCF_LEVELS ?? {};
   const answered = [...Object.values(store.practice), ...Object.values(store.level)].reduce((s, p) => s + Object.keys(p.answers).length, 0);
   const best = Math.max(0, ...Object.values(store.exams).flat().map((e) => e.score));
-  app.innerHTML = header(`TCF ${CFG.name}练习`, `<a href="index.html">← 首页</a>`) + `<main>
+  app.innerHTML = header(`TCF ${CFG.name}练习`, `<a href="memo.html">背题</a><a href="index.html">← 首页</a>`) + `<main>
     <div class="summary">
       <div><b>${answered}</b><span class="muted">练习已答</span></div>
       <div><b>${best || "–"}</b><span class="muted">模考最高分${best ? `（NCLC ${nclc(best)}）` : ""}</span></div>
