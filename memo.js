@@ -81,7 +81,7 @@ function card() {
     ${cueHtml(q)}<p class="word"><span lang="fr">${esc(q.a)}</span> <button class="say" data-say="${esc(q.a)}">${T("读")}</button><small>${esc(q.az)}</small></p>
     ${q.s && q.m > 1 ? `<p class="muted">${T("题库里有")} ${q.m} ${T("题的答案靠这个词")}</p>` : ""}
     ${q.ask ? `<p class="ask"><span lang="fr">${esc(q.ask)}</span></p>` : ""}${q.img ? media(q) : ""}
-    <ul class="memo-opts">${q.o.map(([k, fr, en]) => `<li class="${k === q.k ? "ok" : ""}"><b>${k}</b> <span><span lang="fr">${k === q.k ? mark(fr, q.a) : esc(fr)}</span><small class="muted">${esc(en)}</small></span></li>`).join("")}</ul>
+    <ul class="memo-opts">${q.o.map(([k, fr, en]) => `<li class="${k === q.k ? "ok" : ""}"><b>${k}</b> <span><span lang="fr">${k === q.k ? mark(T.guess(fr), q.a) : esc(T.guess(fr))}</span><small class="muted">${esc(en)}</small></span></li>`).join("")}</ul>
     ${q.key ? `<details><summary>${T("关键句")}</summary><p lang="fr">${mark(q.key, q.c)}</p></details>` : ""}${q.img ? "" : media(q)}${disputed(q)}</div>
     <div class="nav"><button data-act="prev" ${run.i ? "" : "disabled"}>${T("上一个")}</button><button class="primary" data-act="next">${run.i + 1 < run.items.length ? T("下一个") : T("开始测")}</button></div></main>`;
   scrollTo(0, 0);
@@ -90,7 +90,7 @@ function quiz(q) {
   run.cur = q; run.opts = shuffle(q.o); run.picked = null;
   app.innerHTML = header(`${run.kind === "learn" ? T("测一测") : run.kind === "review" ? T("复习") : T("随机测")} ${run.done}/${run.total}`, back()) + `<main class="memo"><div class="card">
     <div class="row"><span class="tag lv-${q.l}">${q.l}</span></div>${cueHtml(q)}${q.img ? `<img class="qimg" src="${esc(q.img)}" alt="${T("题目图片")}">` : ""}
-    <div class="opts">${run.opts.map(([k, fr], i) => `<button class="opt" data-pick="${esc(k)}"><span class="k">${i + 1}</span><span lang="fr">${esc(fr)}</span></button>`).join("")}</div>
+    <div class="opts">${run.opts.map(([k, fr], i) => `<button class="opt" data-pick="${esc(k)}"><span class="k">${i + 1}</span><span lang="fr">${esc(T.guess(fr))}</span></button>`).join("")}</div>
     <div id="after"></div></div></main>`;
   scrollTo(0, 0);
 }

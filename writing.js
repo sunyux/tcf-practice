@@ -94,11 +94,11 @@ function count(q, text) {
 function modelHtml(q) {
   const box = (t, text, sub = "") => `<div class="sec"><h3>${t}${sub ? ` <span class="muted">${sub}</span>` : ""}</h3><p lang="fr">${esc(text)}</p></div>`;
   const sub = (x) => `${x.n} ${T("词")}${x.parts.length ? `${T("：概述")} ${x.parts[0]} ${T("+ 观点")} ${x.parts[1]}` : ""}`;
-  const notes = [q.note, q.len ? `${T("这篇范文词数不合要求：")}${q.len}${T("。")}` : ""].filter(Boolean);
+  const notes = [T.pick(q, "note"), q.len ? `${T("这篇范文词数不合要求：")}${T.pick(q, "len")}${T("。")}` : ""].filter(Boolean);
   return `${q.answer ? box(T("范文"), q.answer, sub(q)) : ""}
     ${notes.length ? `<div class="mine"><strong>${T("补充说明")}</strong>${notes.map((n) => `<p>${esc(n)}</p>`).join("")}</div>` : ""}
     ${q.mine ? box(T("补充范文（Claude 写的）"), q.mine, `${q.mineN} ${T("词")}`) : ""}
-    ${q.others.map((i) => box(`${T("重复题")} ${BY[i].no} ${T("的范文")}`, BY[i].answer, sub(BY[i])) + (BY[i].note ? `<div class="mine"><p>${esc(BY[i].note)}</p></div>` : "")).join("")}`;
+    ${q.others.map((i) => box(`${T("重复题")} ${BY[i].no} ${T("的范文")}`, BY[i].answer, sub(BY[i])) + (BY[i].note ? `<div class="mine"><p>${esc(T.pick(BY[i], "note"))}</p></div>` : "")).join("")}`;
 }
 function question(id) {
   const q = BY[id];

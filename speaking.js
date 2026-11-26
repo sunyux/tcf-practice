@@ -75,11 +75,11 @@ function refHtml(q) {
   const sec = (t, html, text, sub = "") => `<div class="sec"><h3>${t} ${sub ? `<span class="muted">${sub}</span>` : ""} <button class="say" data-say="${esc(text)}">${T("朗读")}</button></h3>${html}</div>`;
   const size = (x) => (x.task === 2 ? `${x.qs.length} ${T("个问题")}` : `${x.n} ${T("词")}`);
   const mine = q.mine ? (Array.isArray(q.mine) ? `<ol class="qs" lang="fr">${q.mine.map((s) => `<li>${esc(s)}</li>`).join("")}</ol>` : `<p lang="fr">${esc(q.mine)}</p>`) : "";
-  return `${q.note ? `<div class="mine"><strong>${T("补充说明")}</strong><p>${esc(q.note)}</p></div>` : ""}
+  return `${q.note ? `<div class="mine"><strong>${T("补充说明")}</strong><p>${esc(T.pick(q, "note"))}</p></div>` : ""}
     ${mine ? sec(T("补充参考（Claude 写的）"), mine, Array.isArray(q.mine) ? q.mine.join(" ") : q.mine) : ""}
     ${q.wrong ? `<details class="sec"><summary>${T("网站的参考（答非所问）")}</summary>${answer(q)}</details>` : sec(T("网站参考"), answer(q), plain(q), size(q))}
     ${q.others.map((i) => { const o = BY[i]; return q.wrong && !q.mine && i === q.others[0] ? sec(`${T("重复题")} ${i} ${T("的参考")}`, answer(o), plain(o), size(o))
-      : `<details class="sec"><summary>${T("重复题")} ${i} ${T("的参考（")}${size(o)}${T("）")}</summary>${o.note ? `<div class="mine"><p>${esc(o.note)}</p></div>` : ""}${answer(o)}</details>`; }).join("")}`;
+      : `<details class="sec"><summary>${T("重复题")} ${i} ${T("的参考（")}${size(o)}${T("）")}</summary>${o.note ? `<div class="mine"><p>${esc(T.pick(o, "note"))}</p></div>` : ""}${answer(o)}</details>`; }).join("")}`;
 }
 const card = (q) => `<div class="card mockq" data-q="${q.id}">
     <div class="row">${tag(q.task)}<span class="muted">${q.id} · ${esc(CATS[q.cat] ?? q.cat)}${q.same.length ? ` ${T("· 另有")} ${q.same.length} ${T("道重复题")}` : ""}</span></div>

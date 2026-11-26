@@ -191,7 +191,7 @@ function body() {
     const cls = open ? (o.k === q.answer ? " ok" : o.k === given ? " no" : "") : "";
     const fr = open || !audioOnly ? o.fr : "";
     return `<button class="opt${cls}" data-pick="${o.k}" aria-pressed="${!open && s.pick === o.k}" ${open ? "disabled" : ""}>
-      <span class="k">${o.k}</span><span>${esc(fr)}${open ? `<span class="en">${esc(o.en)}</span>${o.why ? `<span class="why">${esc(o.why)}</span>` : ""}` : ""}</span></button>`;
+      <span class="k">${o.k}</span><span>${esc(T.guess(fr))}${open ? `<span class="en">${esc(o.en)}</span>${o.why ? `<span class="why">${esc(o.why)}</span>` : ""}` : ""}</span></button>`;
   }).join("");
   const last = s.i === s.items.length - 1;
   let mid = "";
@@ -207,8 +207,8 @@ function review(q, given) {
   const p = (t, cls = "") => (t ? `<p class="${cls}">${esc(t)}</p>` : "");
   return `<strong>${session.view ? "" : !given ? T("未作答，") : given === q.answer ? T("✓ 答对了，") : T("✗ 答错了，")}${T("正确答案")} ${esc(q.answer)}</strong>
     ${q.voted && q.voted !== q.answer ? `<div class="note">${T("用户投票最多的是")} ${esc(q.voted)}${T("，和网站答案不同，请自己判断。")}</div>` : ""}
-    ${q.myNote ? `<div class="mine"><strong>${T("补充解析")}${q.myAnswer && q.myAnswer !== q.answer ? `${T("：我认为答案是")} ${esc(q.myAnswer)}${T("（网站答案")} ${esc(q.answer)}${T("）")}` : ""}</strong><p>${esc(q.myNote)}</p></div>` : ""}
-    ${q.source ? `<div class="note">${T("法语选项取自听力转写（")}${esc(q.source)}${T("），可能有听错的词，以音频为准。")}</div>` : ""}
+    ${q.myNote ? `<div class="mine"><strong>${T("补充解析")}${q.myAnswer && q.myAnswer !== q.answer ? `${T("：我认为答案是")} ${esc(q.myAnswer)}${T("（网站答案")} ${esc(q.answer)}${T("）")}` : ""}</strong><p>${esc(T.pick(q, "myNote"))}</p></div>` : ""}
+    ${q.source ? `<div class="note">${T("法语选项取自听力转写（")}${esc(T(q.source))}${T("），可能有听错的词，以音频为准。")}</div>` : ""}
     ${READING ? sec(T("文章翻译"), p(q.passageEn)) : sec(T("原文"), p(q.fr) + (q.en ? `<details><summary>${T("英文翻译")}</summary>${p(q.en, "muted")}</details>` : ""))}
     ${sec(T("关键句"), p(q.key[0]) + p(q.key[1], "muted"))}
     ${sec(T("解析"), p(q.brief) + p(q.explain))}
