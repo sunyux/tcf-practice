@@ -4,12 +4,12 @@ const KEY = "tcf.vocab.v1", DAY = 86400000, GAP = [0, 1, 3, 7, 15, 30], PAGE = 1
 const D = window.TCF_VOCAB ?? { words: [], phrases: [] };
 // 单词：听说读写四项可以任意多选（听力、阅读看题里的词，写作、口语看范文里的词）
 const LIB = {
-  w: { name: "单词", list: D.words, skills: ["听力", "阅读", "写作", "口语"], idx: [0, 1, 2, 3] },
-  ph: { name: "短语搭配", list: D.phrases, skills: ["听力", "阅读"], idx: [0, 1] },
+  w: { name: T("单词"), list: D.words, skills: [T("听力"), T("阅读"), T("写作"), T("口语")], idx: [0, 1, 2, 3] },
+  ph: { name: T("短语搭配"), list: D.phrases, skills: [T("听力"), T("阅读")], idx: [0, 1] },
 };
 D.phrases.forEach((p) => { p.c ??= ""; });
-const POS = { n: "名词", v: "动词", adj: "形容词", adv: "副词" }, LV = ["A1", "A2", "B1", "B2", "C1", "C2"], TK = ["T1", "T2", "T3"];
-let store = { mem: {}, f: {}, s: {}, opt: { n: 20 }, theme: "" };      // mem: 词 → { b: 熟练度（0 = 不认识）, d: 下次复习 }
+const POS = { n: T("名词"), v: T("动词"), adj: T("形容词"), adv: T("副词") }, LV = ["A1", "A2", "B1", "B2", "C1", "C2"], TK = ["T1", "T2", "T3"];
+let store = { mem: {}, f: {}, s: {}, opt: { n: 20 }, zh: false, theme: "" };      // mem: 词 → { b: 熟练度（0 = 不认识）, d: 下次复习 }
 try { Object.assign(store, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch { /* 存档损坏则重新开始 */ }
 for (const k of Object.keys(store.s)) if (!/^(w|ph)#/.test(k)) delete store.s[k];
 for (const k of ["lr", "ws"]) delete store.f[k];      // 旧版分开的两个词表
@@ -27,22 +27,25 @@ function applyTheme() {
   const t = localStorage.getItem("tcf.theme");
   document.documentElement.dataset.theme = (t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
 }
-const header = (t, extra) => `<header><h1>${esc(t)}</h1>${extra}<button data-act="theme" aria-label="切换深浅色">◐</button></header>`;
+const header = (t, extra) => `<header><h1>${esc(t)}</h1>${extra}<button data-act="theme" aria-label="${T("切换深浅色")}">◐</button></header>`;
 const article = (w) => (w.c !== "n" || !w.g ? "" : /^[aeiouhâàéèêëîïôûùüœ]/.test(w.w) ? `<span class="art">${w.g === "m" ? "un" : "une"}</span> ` : `<span class="art">${w.g === "m" ? "le" : "la"}</span> `);
 // 级别：听力、阅读题里最早出现的级别；只在范文里出现的词归 X
-const lvLabel = (x) => (x === "X" ? "只在写作口语" : x[0] === "T" ? `写作口语 Tâche ${x[1]}` : x);
-const lvOf = (w) => w.lv || "X", lvName = (lv) => (lv === "X" ? "只在范文" : lv === "all" ? "全部" : lv);
+const lvLabel = (x) => (x === "X" ? T("只在写作口语") : x[0] === "T" ? `${T("写作口语 Tâche")} ${x[1]}` : x);
+const lvOf = (w) => w.lv || "X", lvName = (lv) => (lv === "X" ? T("只在范文") : lv === "all" ? T("全部") : lv);
+const ab = (i) => T(["听", "阅", "写", "口"][LIB[lib].idx[i]]);      // 听27 阅57 → L27 R57
+const src = (s) => String(s ?? "").replace(/^(听力|阅读|写作|口语)/, (m) => T(m));      // 例句出处：阅读 Test 8 Q14
+const zh = (s) => (store.zh && s ? s : "");      // 中文意思和例句翻译：默认不显示
 const sel = () => { const k = flt().sk; return LIB[lib].skills.map((_, i) => i).filter((i) => !k || k.includes(i)); };
 const cnt = (w, S = sel()) => S.reduce((t, i) => t + w.n[LIB[lib].idx[i]], 0);
 const base = () => { const S = sel(); return LIB[lib].list.filter((w) => cnt(w, S) >= 2); };      // 选中的几项里一共出现两次以上
 // 学和测用的就是词表筛出来的词；每种筛法各存各的进度
-const ST = { new: "没标过", no: "不认识", ok: "认识", due: "该复习" };
+const ST = { new: T("没标过"), no: T("不认识"), ok: T("认识"), due: T("该复习") };
 const sig = () => { const f = flt(); return [sel().join(""), f.lv, f.pos, f.st, plain(f.q.trim())].join("|"); };
 const sid = (kind) => `${lib}#${kind}#${sig()}`, saved = (kind) => { const x = store.s[sid(kind)]; return x && x.q?.length ? x : null; };
 function desc() {
   const f = flt(), l = LIB[lib];
   const S = sel();
-  return [S.length < l.skills.length && S.map((i) => l.skills[i]).join("+"), f.lv && lvLabel(f.lv), f.pos && POS[f.pos], f.st && ST[f.st], f.q.trim() && `“${f.q.trim()}”`].filter(Boolean).join(" · ") || "全部";
+  return [S.length < l.skills.length && S.map((i) => l.skills[i]).join("+"), f.lv && lvLabel(f.lv), f.pos && POS[f.pos], f.st && ST[f.st], f.q.trim() && `${T("“")}${f.q.trim()}${T("”")}`].filter(Boolean).join(" · ") || T("全部");
 }
 
 // ---------- 列表 ----------
@@ -56,46 +59,47 @@ function pool() {
 }
 function home() {
   const l = LIB[lib], f = flt(), opt = (v, t, cur) => `<option value="${esc(v)}"${String(cur) === String(v) ? " selected" : ""}>${esc(t)}</option>`;
-  app.innerHTML = header("TCF 词汇库", `<a href="index.html">← 首页</a>`) + `<main>
+  app.innerHTML = header(T("TCF 词汇库"), `<a href="index.html">${T("← 首页")}</a>`) + `<main>
     <div class="row tabs">${Object.entries(LIB).map(([k, x]) => `<a class="btn${k === lib ? " primary" : ""}" href="#/${k}">${x.name}</a>`).join("")}</div>
     <div class="summary" id="sum"></div>
-    <h2>词表</h2>
+    <h2>${T("词表")}</h2>
     <div class="row">
-      <span class="chips" role="group" aria-label="出现在哪几项">${l.skills.map((x, i) => `<button data-sk="${i}" aria-pressed="${sel().includes(i)}">${x}</button>`).join("")}</span>
-      <select data-f="lv" aria-label="级别">${opt("", "全部级别", f.lv)}${(lib === "w" ? [...LV, "X", ...TK] : LV).map((x) => opt(x, lvLabel(x), f.lv)).join("")}</select>
-      ${lib === "ph" ? "" : `<select data-f="pos" aria-label="词性">${opt("", "全部词性", f.pos)}${Object.entries(POS).map(([k, v]) => opt(k, v, f.pos)).join("")}</select>`}
-      <select data-f="st" aria-label="状态">${[["", "全部状态"], ["new", "没标过"], ["no", "不认识"], ["ok", "认识"], ["due", "该复习"]].map(([k, v]) => opt(k, v, f.st)).join("")}</select>
-      <select data-f="sort" aria-label="排序">${opt("freq", "按出现次数", f.sort)}${opt("az", "按字母", f.sort)}</select>
-      <input id="q" type="search" placeholder="搜法语、中文" value="${esc(f.q)}">
-      <span class="vgo" id="go"></span></div>
+      <span class="chips" role="group" aria-label="${T("出现在哪几项")}">${l.skills.map((x, i) => `<button data-sk="${i}" aria-pressed="${sel().includes(i)}">${x}</button>`).join("")}</span>
+      <select data-f="lv" aria-label="${T("级别")}">${opt("", T("全部级别"), f.lv)}${(lib === "w" ? [...LV, "X", ...TK] : LV).map((x) => opt(x, lvLabel(x), f.lv)).join("")}</select>
+      ${lib === "ph" ? "" : `<select data-f="pos" aria-label="${T("词性")}">${opt("", T("全部词性"), f.pos)}${Object.entries(POS).map(([k, v]) => opt(k, v, f.pos)).join("")}</select>`}
+      <select data-f="st" aria-label="${T("状态")}">${[["", T("全部状态")], ["new", T("没标过")], ["no", T("不认识")], ["ok", T("认识")], ["due", T("该复习")]].map(([k, v]) => opt(k, v, f.st)).join("")}</select>
+      <select data-f="sort" aria-label="${T("排序")}">${opt("freq", T("按出现次数"), f.sort)}${opt("az", T("按字母"), f.sort)}</select>
+      <input id="q" type="search" placeholder="${T("搜法语、中文")}" value="${esc(f.q)}">
+      <span class="vgo" id="go"></span>
+      <label class="muted"><input type="checkbox" data-zh${store.zh ? " checked" : ""}> ${T("显示中文")}</label></div>
     <div id="list"></div></main>`;
   list();
 }
 function row(w) {
   const l = LIB[lib], st = state(w), ex = exs(w), k = esc(w.w);
-  return `<div class="vrow${st === "ok" ? " known" : ""}" data-w="${k}"><div class="vmain"><button class="say" data-say="${k}" aria-label="读 ${k}">读</button>
-      <span class="vw" lang="fr">${article(w)}<b>${k}</b></span>${w.c ? `<span class="muted vpos">${POS[w.c]}</span>` : ""}<span class="vzh">${esc(w.en)}${w.zh ? `<small class="muted">${esc(w.zh)}</small>` : ""}</span>
-      <span class="muted vn" title="出现在多少题里">${l.skills.map((s, i) => w.n[l.idx[i]] ? `${s[0]}${w.n[l.idx[i]]}` : "").filter(Boolean).join(" ")}</span>${w.lv ? `<span class="tag lv-${w.lv}">${w.lv}</span>` : ""}
-      <span class="vmark"><button data-mark="1" aria-pressed="${st === "ok"}">认识</button><button data-mark="0" aria-pressed="${st === "no"}">不认识</button></span></div>
-    ${ex?.length || w.f?.length ? `<details><summary class="muted">例句</summary>${w.f?.length ? `<p class="muted">题里的形式：<span lang="fr">${esc(w.f.join("、"))}</span></p>` : ""}${(ex ?? []).map(([s, tr, ref]) => `<p><span lang="fr">${hi(s, w)}</span> <button class="say" data-say="${esc(s)}">读</button><small class="muted">${tr ? esc(tr) + " · " : ""}${esc(ref)}</small></p>`).join("")}</details>` : ""}</div>`;
+  return `<div class="vrow${st === "ok" ? " known" : ""}" data-w="${k}"><div class="vmain"><button class="say" data-say="${k}" aria-label="${T("读")} ${k}">${T("读")}</button>
+      <span class="vw" lang="fr">${article(w)}<b>${k}</b></span>${w.c ? `<span class="muted vpos">${POS[w.c]}</span>` : ""}<span class="vzh">${esc(w.en)}${zh(w.zh) ? `<small class="muted">${esc(w.zh)}</small>` : ""}</span>
+      <span class="muted vn" title="${T("出现在多少题里")}">${l.skills.map((s, i) => w.n[l.idx[i]] ? `${ab(i)}${w.n[l.idx[i]]}` : "").filter(Boolean).join(" ")}</span>${w.lv ? `<span class="tag lv-${w.lv}">${w.lv}</span>` : ""}
+      <span class="vmark"><button data-mark="1" aria-pressed="${st === "ok"}">${T("认识")}</button><button data-mark="0" aria-pressed="${st === "no"}">${T("不认识")}</button></span></div>
+    ${ex?.length || w.f?.length ? `<details><summary class="muted">${T("例句")}</summary>${w.f?.length ? `<p class="muted">${T("题里的形式：")}<span lang="fr">${esc(w.f.join(T("、")))}</span></p>` : ""}${(ex ?? []).map(([s, tr, ref]) => `<p><span lang="fr">${hi(s, w)}</span> <button class="say" data-say="${esc(s)}">${T("读")}</button><small class="muted">${zh(tr) ? esc(tr) + " · " : ""}${esc(src(ref))}</small></p>`).join("")}</details>` : ""}</div>`;
 }
 function hi(s, w) {
   const re = new RegExp(`(^|[^\\p{L}-])(${[w.w, ...(w.f ?? [])].sort((a, b) => b.length - a.length).map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})(?=$|[^\\p{L}-])`, "iu"), m = re.exec(s);
   return m ? esc(s.slice(0, m.index + m[1].length)) + `<mark>${esc(m[2])}</mark>` + esc(s.slice(m.index + m[0].length)) : esc(s);
 }
 function goBtns(p) {
-  const L = saved("learn"), T = saved("test"), fresh = flt().st ? p.length : p.filter((w) => state(w) === "new").length, opt = (n) => `<option value="${n}"${store.opt.n === n ? " selected" : ""}>${n ? `测 ${n} 个` : "测全部"}</option>`;
-  return `<a class="btn primary" href="#/${lib}/learn">${L ? `继续学 ${L.d}/${L.t}` : `学<small> ${Math.min(fresh, ROUND)}</small>`}</a><a class="btn" href="#/${lib}/test">${T ? `继续测 ${T.d}/${T.t}` : "测"}</a><select data-o="n" aria-label="测多少个">${[20, 50, 100, 0].map(opt).join("")}</select>`;
+  const L = saved("learn"), Ts = saved("test"), fresh = flt().st ? p.length : p.filter((w) => state(w) === "new").length, opt = (n) => `<option value="${n}"${store.opt.n === n ? " selected" : ""}>${n ? `${T("测")} ${n} ${T("个")}` : T("测全部")}</option>`;
+  return `<a class="btn primary" href="#/${lib}/learn">${L ? `${T("继续学")} ${L.d}/${L.t}` : `${T("学")}<small> ${Math.min(fresh, ROUND)}</small>`}</a><a class="btn" href="#/${lib}/test">${Ts ? `${T("继续测")} ${Ts.d}/${Ts.t}` : T("测")}</a><select data-o="n" aria-label="${T("测多少个")}">${[20, 50, 100, 0].map(opt).join("")}</select>`;
 }
 function summary() {
   const b = base(), n = (s) => b.filter((w) => state(w) === s).length;
-  $("#sum").innerHTML = `<div><b>${n("ok")}</b><span class="muted">认识</span></div><div><b>${n("no")}</b><span class="muted">不认识</span></div><div><b>${b.filter(due).length}</b><span class="muted">该复习</span></div><div><b>${b.length}</b><span class="muted">${esc(sel().map((i) => LIB[lib].skills[i][0]).join(""))} 共</span></div>`;
+  $("#sum").innerHTML = `<div><b>${n("ok")}</b><span class="muted">${T("认识")}</span></div><div><b>${n("no")}</b><span class="muted">${T("不认识")}</span></div><div><b>${b.filter(due).length}</b><span class="muted">${T("该复习")}</span></div><div><b>${b.length}</b><span class="muted">${esc(sel().map(ab).join(""))} ${T("共")}</span></div>`;
 }
 function list() {
   const p = pool();
   summary();
   $("#go").innerHTML = goBtns(p);
-  $("#list").innerHTML = `<p class="muted">${p.length} 条</p>${p.slice(0, shown).map(row).join("")}${p.length > shown ? `<div class="nav"><span></span><button data-act="more">再显示 ${Math.min(PAGE, p.length - shown)} 条</button></div>` : ""}`;
+  $("#list").innerHTML = `<p class="muted">${p.length} ${T("条")}</p>${p.slice(0, shown).map(row).join("")}${p.length > shown ? `<div class="nav"><span></span><button data-act="more">${T("再显示")} ${Math.min(PAGE, p.length - shown)} ${T("条")}</button></div>` : ""}`;
 }
 function mark(w, ok, auto) {
   const m = store.mem[w.w] ?? { b: 0, d: 0 };
@@ -124,14 +128,14 @@ function start(kind, fresh) {
   else { p = shuffle(p.filter((w) => example(w) || w.en)); if (store.opt.n) p = p.slice(0, store.opt.n); }
   if (!p.length) {
     run = null;
-    app.innerHTML = header(`${KIND[kind]}`, `<a href="#/${lib}">← 返回</a>`) + `<main class="memo"><p class="muted">${esc(d)}</p><p>${kind === "learn" && !flt().st && pool().length ? "这些词都标过了。可以测，或者把状态选成“不认识”“该复习”再学。" : "没有符合筛选的词，换个筛选再试。"}</p></main>`;
+    app.innerHTML = header(`${KIND[kind]}`, `<a href="#/${lib}">${T("← 返回")}</a>`) + `<main class="memo"><p class="muted">${esc(d)}</p><p>${kind === "learn" && !flt().st && pool().length ? T("这些词都标过了。可以测，或者把状态选成“不认识”“该复习”再学。") : T("没有符合筛选的词，换个筛选再试。")}</p></main>`;
     return;
   }
   run = { kind, key, desc: d, items: p, queue: [...p], missed: new Set(), done: 0, total: p.length };
   keep(); next();
 }
-const back = () => `<a href="#/${lib}">退出（进度已存）</a>`;
-const KIND = { learn: "学词", test: "Meaning quiz" };
+const back = () => `<a href="#/${lib}">${T("退出（进度已存）")}</a>`;
+const KIND = { learn: T("学词"), test: "Meaning quiz" };
 // 例句：听力阅读的来自题目，写作口语的来自范文，只给选中的那几项
 const exs = (w) => { const S = sel(); return [...(S.some((i) => LIB[lib].idx[i] < 2) ? w.x ?? [] : []), ...(S.some((i) => LIB[lib].idx[i] > 1) ? w.y ?? [] : [])]; };
 const example = (w) => exs(w)[0] ?? null;
@@ -141,18 +145,18 @@ function next() {
   run.kind === "test" ? quiz() : card();
 }
 const top_ = () => `<div class="row"><span class="tag ${lvOf(run.cur) !== "X" ? `lv-${lvOf(run.cur)}` : ""}">${lvName(lvOf(run.cur))}</span>${run.cur.c ? `<span class="muted">${POS[run.cur.c]}</span>` : ""}<span class="muted" style="margin-left:auto">${esc(run.desc)}</span></div><div class="bar" style="margin-top:8px"><i style="width:${(run.done / run.total) * 100}%"></i></div>`;
-const wordLine = (w) => `<p class="word"><span lang="fr">${article(w)}${esc(w.w)}</span> <button class="say" data-say="${esc(w.w)}">读</button></p>`;
-const exLine = (w) => { const x = example(w); return x ? `<p class="exline" lang="fr">${hi(x[0], w)} <button class="say" data-say="${esc(x[0])}">读</button></p>` : ""; };
+const wordLine = (w) => `<p class="word"><span lang="fr">${article(w)}${esc(w.w)}</span> <button class="say" data-say="${esc(w.w)}">${T("读")}</button></p>`;
+const exLine = (w) => { const x = example(w); return x ? `<p class="exline" lang="fr">${hi(x[0], w)} <button class="say" data-say="${esc(x[0])}">${T("读")}</button></p>` : ""; };
 function card() {
   const w = run.cur, x = example(w);
   app.innerHTML = header(`${KIND[run.kind]} ${run.done}/${run.total}`, back()) + `<main class="memo"><div class="card">${top_()}${wordLine(w)}${exLine(w)}
-    <div id="ans" hidden><p class="word" style="font-size:26px">${esc(w.en)}<small>${esc(w.zh ?? "")}</small></p>${x?.[1] ? `<p class="muted">${esc(x[1])}</p>` : ""}${w.f?.length ? `<p class="muted">题里的形式：<span lang="fr">${esc(w.f.join("、"))}</span></p>` : ""}${x ? `<p class="muted">${esc(x[2])}</p>` : ""}</div></div>
-    <div class="nav" id="btns"><span></span><button class="primary" data-act="show">看意思</button></div></main>`;
+    <div id="ans" hidden><p class="word" style="font-size:26px">${esc(w.en)}<small>${esc(zh(w.zh))}</small></p>${zh(x?.[1]) ? `<p class="muted">${esc(x[1])}</p>` : ""}${w.f?.length ? `<p class="muted">${T("题里的形式：")}<span lang="fr">${esc(w.f.join(T("、")))}</span></p>` : ""}${x ? `<p class="muted">${esc(src(x[2]))}</p>` : ""}</div></div>
+    <div class="nav" id="btns"><span></span><button class="primary" data-act="show">${T("看意思")}</button></div></main>`;
   scrollTo(0, 0);
 }
 function show() {
   run.open = true; $("#ans").hidden = false;
-  $("#btns").innerHTML = `<button data-act="bad">不认识</button><button class="primary" data-act="good">认识</button>`;
+  $("#btns").innerHTML = `<button data-act="bad">${T("不认识")}</button><button class="primary" data-act="good">${T("认识")}</button>`;
 }
 // 先记录再换下一个：看到答案后马上退出也不会丢
 function record(ok) {
@@ -180,18 +184,18 @@ function pick(i) {
   app.querySelectorAll(".opt").forEach((b, j) => {
     b.disabled = true;
     if (run.opts[j] === w) b.classList.add("ok"); else if (j === i) b.classList.add("no");
-    if (run.opts[j] === w || j === i) b.lastElementChild.innerHTML = `${esc(run.opts[j].en)}<span class="en"><span lang="fr">${esc(run.opts[j].w)}</span>${run.opts[j].zh ? ` ${esc(run.opts[j].zh)}` : ""}</span>`;
+    if (run.opts[j] === w || j === i) b.lastElementChild.innerHTML = `${esc(run.opts[j].en)}<span class="en"><span lang="fr">${esc(run.opts[j].w)}</span>${zh(run.opts[j].zh) ? ` ${esc(run.opts[j].zh)}` : ""}</span>`;
   });
   record(ok);
-  $("#after").innerHTML = `${x?.[1] ? `<p class="muted">${esc(x[1])}</p>` : ""}${x ? `<p class="muted">${esc(x[2])}</p>` : ""}<div class="nav"><span class="${ok ? "okc" : "badc"}">${ok ? "对了" : "错了，等会儿再考"}</span><button class="primary" data-act="cont">${run.queue.length ? "下一个" : "看结果"}</button></div>`;
+  $("#after").innerHTML = `${zh(x?.[1]) ? `<p class="muted">${esc(x[1])}</p>` : ""}${x ? `<p class="muted">${esc(src(x[2]))}</p>` : ""}<div class="nav"><span class="${ok ? "okc" : "badc"}">${ok ? T("对了") : T("错了，等会儿再考")}</span><button class="primary" data-act="cont">${run.queue.length ? T("下一个") : T("看结果")}</button></div>`;
   $("#after .primary").focus();
 }
 function finish() {
   const { items, missed, total, kind, desc: d } = run, bad = items.filter((w) => missed.has(w.w)), left = pool().filter((w) => state(w) === "new").length;
   run = null;
-  app.innerHTML = header("这一轮完成", `<a href="#/${lib}">← 返回</a>`) + `<main><div class="summary"><div><b>${total - bad.length}/${total}</b><span class="muted">一次答对</span></div><div><b>${left}</b><span class="muted">还没学的（${esc(d)}）</span></div></div>
-    <div class="row" style="margin-top:16px"><button class="primary" data-act="again" data-kind="${kind}">${kind === "learn" ? "再学一组" : "再来一轮"}</button>${kind === "learn" ? `<a class="btn" href="#/${lib}/test">测这些词</a>` : ""}<a class="btn" href="#/${lib}">返回</a></div>
-    ${bad.length ? `<h2>还不熟的</h2>${bad.map(row).join("")}` : ""}</main>`;
+  app.innerHTML = header(T("这一轮完成"), `<a href="#/${lib}">${T("← 返回")}</a>`) + `<main><div class="summary"><div><b>${total - bad.length}/${total}</b><span class="muted">${T("一次答对")}</span></div><div><b>${left}</b><span class="muted">${T("还没学的（")}${esc(d)}${T("）")}</span></div></div>
+    <div class="row" style="margin-top:16px"><button class="primary" data-act="again" data-kind="${kind}">${kind === "learn" ? T("再学一组") : T("再来一轮")}</button>${kind === "learn" ? `<a class="btn" href="#/${lib}/test">${T("测这些词")}</a>` : ""}<a class="btn" href="#/${lib}">${T("返回")}</a></div>
+    ${bad.length ? `<h2>${T("还不熟的")}</h2>${bad.map(row).join("")}` : ""}</main>`;
 }
 
 // ---------- 事件 ----------
@@ -231,7 +235,7 @@ app.addEventListener("click", (e) => {
     r.outerHTML = row(w);
   }
 });
-app.addEventListener("change", (e) => { const o = e.target.dataset?.o; if (o) { store.opt[o] = +e.target.value; delete_tests(); save(); return list(); } const k = e.target.dataset?.f; if (k) { flt()[k] = e.target.value; shown = PAGE; save(); list(); } });
+app.addEventListener("change", (e) => { if (e.target.hasAttribute?.("data-zh")) { store.zh = e.target.checked; save(); return list(); } const o = e.target.dataset?.o; if (o) { store.opt[o] = +e.target.value; delete_tests(); save(); return list(); } const k = e.target.dataset?.f; if (k) { flt()[k] = e.target.value; shown = PAGE; save(); list(); } });
 app.addEventListener("input", (e) => { if (e.target.id === "q") { flt().q = e.target.value; shown = PAGE; list(); } });
 addEventListener("keydown", (e) => {
   if (!run?.cur || e.metaKey || e.ctrlKey || e.altKey || e.target.closest?.("input,select,button,summary")) return;

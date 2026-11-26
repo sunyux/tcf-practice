@@ -1,6 +1,6 @@
 "use strict";
 // 程序文件走网络（断网用缓存）。data*/ 和 media/ 不在本站，从 Firestore 读（要登录），读过的存在这台设备的 IndexedDB
-const FS = "https://firestore.googleapis.com/v1/projects/dictation-30ff5/databases/(default)/documents", SHELL = "tcf-shell-88ee70a380", FILES = ["index.html", "listening.html", "reading.html", "writing.html", "speaking.html", "memo.html", "vocab.html", "app.js", "home.js", "writing.js", "speaking.js", "memo.js", "vocab.js", "style.css", "cloud.js", "firebase-config.js"];
+const FS = "https://firestore.googleapis.com/v1/projects/dictation-30ff5/databases/(default)/documents", SHELL = "tcf-shell-68a0635015", FILES = ["index.html", "listening.html", "reading.html", "writing.html", "speaking.html", "memo.html", "vocab.html", "i18n.js", "app.js", "home.js", "writing.js", "speaking.js", "memo.js", "vocab.js", "style.css", "cloud.js", "firebase-config.js"];
 const ROOT = new URL("./", location).pathname;
 
 // ---------- IndexedDB ----------

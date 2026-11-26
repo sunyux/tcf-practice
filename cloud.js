@@ -2,14 +2,14 @@
 // 登录 → 取题库 → 同步进度 → 启动页面程序
 (() => {
   const FS = "https://firestore.googleapis.com/v1/projects/dictation-30ff5/databases/(default)/documents", ROOT = new URL("./", location.href).pathname;
-  const KEYS = ["tcf.listening.v1", "tcf.reading.v1", "tcf.writing.v1", "tcf.speaking.v1", "tcf.memo.v1", "tcf.vocab.v1"], META = "tcf.sync2";
+  const KEYS = ["tcf.listening.v1", "tcf.reading.v1", "tcf.writing.v1", "tcf.speaking.v1", "tcf.memo.v1", "tcf.vocab.v1", "tcf.lang"], META = "tcf.sync2";
   const me = document.currentScript, BOOT = me.dataset.boot.split(" "), HOME = BOOT.at(-1) === "home.js";
   const app = document.getElementById("app");
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const t = localStorage.getItem("tcf.theme");
   document.documentElement.dataset.theme = (t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
-  const screen = (html) => { app.innerHTML = `<header><h1>TCF Canada 练习</h1></header><main class="gate">${html}</main>`; };
-  screen(`<p class="muted">正在打开…</p>`);
+  const screen = (html) => { app.innerHTML = `<header><h1>${T("TCF Canada 练习")}</h1></header><main class="gate">${html}</main>`; };
+  screen(`<p class="muted">${T("正在打开…")}</p>`);
 
   // ---------- 登录（用单独的 app 名，不影响同域名下的其他网站） ----------
   let user = null, auth = null;
@@ -30,10 +30,10 @@
     navigator.serviceWorker.controller.postMessage(msg, [ch.port2]);
   });
   function loginScreen(msg = "") {
-    screen(`<p>这是私人练习网站，只有受邀的 Google 账号能打开题库。</p><button class="primary" id="in">用 Google 登录</button>${msg ? `<p class="note">${esc(msg)}</p>` : ""}`);
+    screen(`<p>${T("这是私人练习网站，只有受邀的 Google 账号能打开题库。")}</p><button class="primary" id="in">${T("用 Google 登录")}</button>${msg ? `<p class="note">${esc(msg)}</p>` : ""}`);
     document.getElementById("in").onclick = async () => {
       try { await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); location.reload(); }
-      catch (e) { loginScreen(/popup/.test(e.code ?? "") ? "登录窗口被关掉或拦住了，请允许弹出窗口再试。" : `登录失败：${e.code ?? e.message}`); }
+      catch (e) { loginScreen(/popup/.test(e.code ?? "") ? T("登录窗口被关掉或拦住了，请允许弹出窗口再试。") : `${T("登录失败：")}${e.code ?? e.message}`); }
     };
   }
   async function signOut() {
@@ -110,15 +110,15 @@
         if (!r.ok) throw new Error(r.status);
         const { updateTime } = await r.json();
         editMeta((x) => { x.rev[k] = updateTime; if (localStorage.getItem(k) === value) delete x.dirty[k]; });
-        show("进度已同步");
-      } catch { show("没连上，进度先存在这台设备"); return; }
+        show(T("进度已同步"));
+      } catch { show(T("没连上，进度先存在这台设备")); return; }
     }
     if (KEYS.some((k) => meta().dirty[k] && !stopped.has(k))) later();
   }
   function banner() {
     if (document.getElementById("syncbar")) return;
     const d = document.createElement("div");
-    d.id = "syncbar"; d.setAttribute("role", "status"); d.innerHTML = `另一台设备有新进度 <button>刷新合并</button>`;
+    d.id = "syncbar"; d.setAttribute("role", "status"); d.innerHTML = `${T("另一台设备有新进度")} <button>${T("刷新合并")}</button>`;
     d.querySelector("button").onclick = () => location.reload();
     document.body.append(d);
   }
@@ -146,12 +146,12 @@
   const script = (src) => new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = () => rej(new Error(src)); document.body.append(s); });
   const CAPTURE = { L() { window.TCF_L = { tests: TCF_INDEX, levels: TCF_LEVELS, alias: window.TCF_ALIAS ?? {} }; window.TCF_ALIAS = {}; }, R() { window.TCF_R = { tests: TCF_INDEX, levels: TCF_LEVELS, alias: window.TCF_ALIAS ?? {} }; } };
   async function start() {
-    if (!("serviceWorker" in navigator) || !("DecompressionStream" in window)) return screen(`<p class="note">这个浏览器太旧或在无痕模式，请换新版 Safari 或 Chrome。</p>`);
+    if (!("serviceWorker" in navigator) || !("DecompressionStream" in window)) return screen(`<p class="note">${T("这个浏览器太旧或在无痕模式，请换新版 Safari 或 Chrome。")}</p>`);
     await navigator.serviceWorker.register("sw.js", { updateViaCache: "none" });
     await navigator.serviceWorker.ready;
     if (!navigator.serviceWorker.controller) await new Promise((res) => { navigator.serviceWorker.addEventListener("controllerchange", res, { once: true }); setTimeout(res, 3000); });
     if (!navigator.serviceWorker.controller) {
-      if (sessionStorage.getItem("tcf.reload")) return screen(`<p class="note">页面没有准备好，请关掉这个标签页重新打开。</p>`);
+      if (sessionStorage.getItem("tcf.reload")) return screen(`<p class="note">${T("页面没有准备好，请关掉这个标签页重新打开。")}</p>`);
       sessionStorage.setItem("tcf.reload", "1"); return location.reload();
     }
     sessionStorage.removeItem("tcf.reload");
@@ -160,22 +160,22 @@
     const m = await ask("manifest");
     if (m.err && m.err !== 503 && !(m.err === 404)) {
       if (m.err === 401 && m.cached) { /* 断网时用本机题库 */ } else {
-        screen(`<p>${esc(user?.email ?? "")} 没有权限打开题库。</p><p class="muted">请用受邀的那个账号登录，或请主人检查权限。（${esc(m.err)}）</p><button id="out">换一个账号</button>`);
+        screen(`<p>${esc(user?.email ?? "")} ${T("没有权限打开题库。")}</p><p class="muted">${T("请用受邀的那个账号登录，或请主人检查权限。（")}${esc(m.err)}${T("）")}</p><button id="out">${T("换一个账号")}</button>`);
         document.getElementById("out").onclick = signOut; return;
       }
-    } else if (m.err === 404) return screen(`<p>题库还没有上传。</p>`);
-    else if (m.err !== undefined && !m.cached) return screen(`<p>没有网络，这台设备上也还没有题库。</p>`);
+    } else if (m.err === 404) return screen(`<p>${T("题库还没有上传。")}</p>`);
+    else if (m.err !== undefined && !m.cached) return screen(`<p>${T("没有网络，这台设备上也还没有题库。")}</p>`);
     if (user) switchUser();
-    if (user) try { await pull(); show("进度已同步"); } catch { show("没连上，用这台设备上的进度"); }
+    if (user) try { await pull(); show(T("进度已同步")); } catch { show(T("没连上，用这台设备上的进度")); }
     watch();
     try { for (const b of BOOT) if (CAPTURE[b]) CAPTURE[b](); else await script(b); }
-    catch (e) { return screen(`<p class="note">题库没有读出来，请检查网络后刷新。（${esc(e.message)}）</p>`); }
+    catch (e) { return screen(`<p class="note">${T("题库没有读出来，请检查网络后刷新。（")}${esc(e.message)}${T("）")}</p>`); }
     if (user) push();
     if (!HOME) return;
     const f = document.createElement("footer");
-    f.className = "cloud"; f.innerHTML = `<span class="muted"><span id="sync">${esc(last)}</span>${user ? ` · ${esc(user.email)}` : ""}</span><button id="out">退出登录</button>`;
+    f.className = "cloud"; f.innerHTML = `<span class="muted"><span id="sync">${esc(last)}</span>${user ? ` · ${esc(user.email)}` : ""}</span><button id="out">${T("退出登录")}</button>`;
     document.body.append(f);
-    document.getElementById("out").onclick = () => { if (confirm("退出登录会删除这台设备上的题库缓存，做题记录保留。确定吗？")) signOut(); };
+    document.getElementById("out").onclick = () => { if (confirm(T("退出登录会删除这台设备上的题库缓存，做题记录保留。确定吗？"))) signOut(); };
   }
-  start().catch((e) => screen(`<p class="note">打不开：${esc(e.message)}</p>`));
+  start().catch((e) => screen(`<p class="note">${T("打不开：")}${esc(e.message)}</p>`));
 })();

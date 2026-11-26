@@ -26,35 +26,35 @@ function tests(page, name, key, d, min) {
   const answered = sum(Object.values(s.practice ?? {}).map((p) => n(p.answers)));
   const go = Object.entries(s.running ?? {}).find(([, r]) => r.deadline > Date.now())?.[0];
   const next = lv.find(([l, c]) => done(l) < c)?.[0];
-  return panel(page, name, `${sum(lv.map(([, c]) => c))} 题不重复，${d.tests.length} 套，模考 ${min} 分钟`,
-    [fact(best || "–", "模考最高分"), fact(answered, "整套练习已答"), fact(n(s.wrong), "错题"), fact(n(s.star), "收藏")],
+  return panel(page, name, `${sum(lv.map(([, c]) => c))} ${T("题不重复，")}${d.tests.length} ${T("套，模考")} ${min} ${T("分钟")}`,
+    [fact(best || "–", T("模考最高分")), fact(answered, T("整套练习已答")), fact(n(s.wrong), T("错题")), fact(n(s.star), T("收藏"))],
     lv.map(([l, c]) => bar(l, done(l), c, `${page}#/level/${l}`, `lv-${l}`)).join(""),
-    [go ? [`${page}#/exam/${go}`, `继续模考 ${go.replace("test", "Test ")}`, 1] : next && [`${page}#/level/${next}`, `练 ${next}`, 1],
-      n(s.wrong) && [`${page}#/wrong`, "练错题"], [page, "全部"], ["memo.html#/", "背题"]]);
+    [go ? [`${page}#/exam/${go}`, `${T("继续模考")} ${go.replace("test", "Test ")}`, 1] : next && [`${page}#/level/${next}`, `${T("练")} ${next}`, 1],
+      n(s.wrong) && [`${page}#/wrong`, T("练错题")], [page, T("全部")], ["memo.html#/", T("背题")]]);
 }
 function writing() {
   const m = window.TCF_META_WRITING, s = read("tcf.writing.v1");
-  return panel("writing.html", "写作", `${m.uniq} 题不重复，${Object.entries(m.tasks).map(([t, c]) => `Tâche ${t}：${c}`).join("，")}`,
-    [fact(n(s.mocks), "次模考"), fact(n(s.drafts), "篇草稿"), fact(n(s.star), "收藏")],
-    bar("写完", n(s.done), m.uniq, "writing.html"),
-    [["writing.html#/mock", s.running ? "继续模考" : "模考 60 分钟", 1], ["writing.html", "全部"]]);
+  return panel("writing.html", T("写作"), `${m.uniq} ${T("题不重复，")}${Object.entries(m.tasks).map(([t, c]) => `Tâche ${t}${T("：")}${c}`).join(T("，"))}`,
+    [fact(n(s.mocks), T("次模考")), fact(n(s.drafts), T("篇草稿")), fact(n(s.star), T("收藏"))],
+    bar(T("写完"), n(s.done), m.uniq, "writing.html"),
+    [["writing.html#/mock", s.running ? T("继续模考") : T("模考 60 分钟"), 1], ["writing.html", T("全部")]]);
 }
 function speaking() {
   const m = window.TCF_META_SPEAKING, s = read("tcf.speaking.v1");
-  return panel("speaking.html", "口语", `${m.uniq} 题不重复，${Object.entries(m.tasks).map(([t, c]) => `Tâche ${t}：${c}`).join("，")}，快速套 ${m.quick}`,
-    [fact(n(s.star), "收藏")], bar("练过", n(s.done), m.uniq, "speaking.html"), [["speaking.html", "开始练", 1]]);
+  return panel("speaking.html", T("口语"), `${m.uniq} ${T("题不重复，")}${Object.entries(m.tasks).map(([t, c]) => `Tâche ${t}${T("：")}${c}`).join(T("，"))}${T("，快速套")} ${m.quick}`,
+    [fact(n(s.star), T("收藏"))], bar(T("练过"), n(s.done), m.uniq, "speaking.html"), [["speaking.html", T("开始练"), 1]]);
 }
 function vocab() {
   const m = window.TCF_META_VOCAB, s = read("tcf.vocab.v1");
   const ok = Object.values(s.mem ?? {}).filter((x) => x.b > 0).length, due = Object.values(s.mem ?? {}).filter((x) => x.d <= Date.now()).length;
-  return panel("vocab.html", "词汇库", `听说读写真题里的词，可多选筛选；短语 ${m.phrases}`,
-    [fact(ok, "认识"), fact(due, "该复习")], "", [["vocab.html#/w", "单词", 1], ["vocab.html#/ph", "短语"]]);
+  return panel("vocab.html", T("词汇库"), `${T("听说读写真题里的词，可多选筛选；短语")} ${m.phrases}`,
+    [fact(ok, T("认识")), fact(due, T("该复习"))], "", [["vocab.html#/w", T("单词"), 1], ["vocab.html#/ph", T("短语")]]);
 }
 function home() {
   if (!window.TCF_L || !window.TCF_R || !window.TCF_META_WRITING || !window.TCF_META_SPEAKING || !window.TCF_META_VOCAB) return;   // 手机版还没导入题库
-  app.innerHTML = `<header><h1>TCF Canada 练习</h1><button id="theme" aria-label="切换深浅色">◐</button></header><main class="hub">
-    ${tests("listening.html", "听力", "tcf.listening.v1", window.TCF_L, 35)}
-    ${tests("reading.html", "阅读", "tcf.reading.v1", window.TCF_R, 60)}
+  app.innerHTML = `<header><h1>${T("TCF Canada 练习")}</h1><button id="theme" aria-label="${T("切换深浅色")}">◐</button></header><main class="hub">
+    ${tests("listening.html", T("听力"), "tcf.listening.v1", window.TCF_L, 35)}
+    ${tests("reading.html", T("阅读"), "tcf.reading.v1", window.TCF_R, 60)}
     ${writing()}${speaking()}${vocab()}</main>`;
 }
 app.addEventListener("click", (e) => {

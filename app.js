@@ -2,9 +2,9 @@
 // listening（listening.html）或 reading（reading.html）
 const READING = window.TCF_SKILL === "reading";
 const CFG = READING
-  ? { name: "阅读", min: 60, data: "data-reading", key: "tcf.reading.v1",
+  ? { name: T("阅读"), min: 60, data: "data-reading", key: "tcf.reading.v1",
       nclc: [[549, "10+"], [524, "9"], [499, "8"], [453, "7"], [406, "6"], [375, "5"], [324, "4"]] }
-  : { name: "听力", min: 35, data: "data", key: "tcf.listening.v1",
+  : { name: T("听力"), min: 35, data: "data", key: "tcf.listening.v1",
       nclc: [[549, "10+"], [523, "9"], [503, "8"], [458, "7"], [398, "6"], [369, "5"], [331, "4"]] };
 // TCF Canada 计分：39 题共 699 分
 const points = (n) => (n <= 4 ? 3 : n <= 10 ? 9 : n <= 19 ? 15 : n <= 29 ? 21 : n <= 35 ? 26 : 33);
@@ -29,7 +29,7 @@ function loadTest(id) {
     const s = document.createElement("script");
     s.src = `${CFG.data}/${id}.js`;
     s.onload = () => res(window.TCF_DATA[id]);
-    s.onerror = () => { delete loading[id]; rej(new Error(`读取 ${id} 失败`)); };
+    s.onerror = () => { delete loading[id]; rej(new Error(`${T("读取")} ${id} ${T("失败")}`)); };
     document.head.append(s);
   });
 }
@@ -42,7 +42,7 @@ function applyTheme() {
 function toggleTheme() {
   localStorage.setItem("tcf.theme", document.documentElement.dataset.theme === "dark" ? "light" : "dark"); applyTheme();
 }
-const header = (t, extra = "") => `<header><h1>${esc(t)}</h1>${extra}<button data-act="theme" aria-label="切换深浅色">◐</button></header>`;
+const header = (t, extra = "") => `<header><h1>${esc(t)}</h1>${extra}<button data-act="theme" aria-label="${T("切换深浅色")}">◐</button></header>`;
 
 // ---------- 首页 ----------
 function home() {
@@ -51,43 +51,43 @@ function home() {
   const levels = window.TCF_LEVELS ?? {};
   const answered = [...Object.values(store.practice), ...Object.values(store.level)].reduce((s, p) => s + Object.keys(p.answers).length, 0);
   const best = Math.max(0, ...Object.values(store.exams).flat().map((e) => e.score));
-  app.innerHTML = header(`TCF ${CFG.name}练习`, `<a href="memo.html">背题</a><a href="index.html">← 首页</a>`) + `<main>
+  app.innerHTML = header(T(READING ? "TCF 阅读练习" : "TCF 听力练习"), `<a href="memo.html">${T("背题")}</a><a href="index.html">${T("← 首页")}</a>`) + `<main>
     <div class="summary">
-      <div><b>${answered}</b><span class="muted">练习已答</span></div>
-      <div><b>${best || "–"}</b><span class="muted">模考最高分${best ? `（NCLC ${nclc(best)}）` : ""}</span></div>
-      <div><b>${wrong}</b><span class="muted">错题</span></div>
-      <div><b>${star}</b><span class="muted">收藏</span></div>
+      <div><b>${answered}</b><span class="muted">${T("练习已答")}</span></div>
+      <div><b>${best || "–"}</b><span class="muted">${T("模考最高分")}${best ? `${T("（NCLC")} ${nclc(best)}${T("）")}` : ""}</span></div>
+      <div><b>${wrong}</b><span class="muted">${T("错题")}</span></div>
+      <div><b>${star}</b><span class="muted">${T("收藏")}</span></div>
     </div>
     <div class="row" style="margin-top:14px">
-      <button data-go="#/wrong" ${wrong ? "" : "disabled"}>练错题</button>
-      <button data-go="#/star" ${star ? "" : "disabled"}>练收藏</button>
-      <button data-act="reset">清空记录</button>
+      <button data-go="#/wrong" ${wrong ? "" : "disabled"}>${T("练错题")}</button>
+      <button data-go="#/star" ${star ? "" : "disabled"}>${T("练收藏")}</button>
+      <button data-act="reset">${T("清空记录")}</button>
     </div>
-    <h2>按级别练习</h2>
-    <p class="muted">从 ${tests.length} 套里按级别抽出来，重复的题只出现一次，共 ${Object.values(levels).reduce((a, x) => a + x, 0)} 题。</p>
+    <h2>${T("按级别练习")}</h2>
+    <p class="muted">${T("从")} ${tests.length} ${T("套里按级别抽出来，重复的题只出现一次，共")} ${Object.values(levels).reduce((a, x) => a + x, 0)} ${T("题。")}</p>
     <div class="tests levels">${Object.entries(levels).map(([lv, count]) => {
       const n = Object.keys(store.level[lv]?.answers ?? {}).filter((u) => !ALIAS[u]).length;
       return `<div class="test"><span class="tag ${lvClass(lv)}">${esc(lv)}</span>
         <div class="bar"><i style="width:${(n / count) * 100}%"></i></div>
         <div class="muted">${n}/${count}</div>
-        <div class="row"><button data-go="#/level/${esc(lv)}">${n ? "继续" : "练习"}</button><button data-go="#/viewlevel/${esc(lv)}">看解析</button></div></div>`;
+        <div class="row"><button data-go="#/level/${esc(lv)}">${n ? T("继续") : T("练习")}</button><button data-go="#/viewlevel/${esc(lv)}">${T("看解析")}</button></div></div>`;
     }).join("")}</div>
-    <h2>整套${CFG.name}</h2>
+    <h2>${T("整套")}${CFG.name}</h2>
     <div class="tests">${tests.map((t) => {
       const p = store.practice[t.id], n = p ? Object.keys(p.answers).length : 0;
       const ex = store.exams[t.id] ?? [], top = Math.max(0, ...ex.map((e) => e.score));
       return `<div class="test"><strong>${title(t.id)}</strong>
         <div class="bar"><i style="width:${(n / t.count) * 100}%"></i></div>
-        <div class="muted">练习 ${n}/${t.count}${ex.length ? ` · 模考 ${top}` : ""}</div>
-        <div class="row"><button data-go="#/practice/${t.id}">${n ? "继续" : "练习"}</button>
-        ${t.count === 39 ? `<button data-go="#/exam/${t.id}">${store.running[t.id] ? "继续模考" : "模考"}</button>` : ""}
-        <button data-go="#/view/${t.id}">看解析</button></div></div>`;
+        <div class="muted">${T("练习")} ${n}/${t.count}${ex.length ? ` ${T("· 模考")} ${top}` : ""}</div>
+        <div class="row"><button data-go="#/practice/${t.id}">${n ? T("继续") : T("练习")}</button>
+        ${t.count === 39 ? `<button data-go="#/exam/${t.id}">${store.running[t.id] ? T("继续模考") : T("模考")}</button>` : ""}
+        <button data-go="#/view/${t.id}">${T("看解析")}</button></div></div>`;
     }).join("")}</div></main>`;
 }
 
 // ---------- 做题 ----------
 async function start(kind, id) {
-  app.innerHTML = header("载入中…");
+  app.innerHTML = header(T("载入中…"));
   const at = location.hash;
   let items;
   if (kind === "practice" || kind === "exam" || kind === "view") {
@@ -128,12 +128,12 @@ async function start(kind, id) {
   tick();
 }
 
-const sessionTitle = () => ({ practice: `${title(session.id ?? "")} · 练习`, exam: `${title(session.id ?? "")} · 模考`, level: `${session.id} · 跨套练习`, view: `${title(session.id ?? "")} · 看解析`, viewlevel: `${session.id} · 看解析（不重复）`, wrong: "错题本", star: "收藏" }[session.kind]);
+const sessionTitle = () => ({ practice: `${title(session.id ?? "")} ${T("· 练习")}`, exam: `${title(session.id ?? "")} ${T("· 模考")}`, level: `${session.id} ${T("· 跨套练习")}`, view: `${title(session.id ?? "")} ${T("· 看解析")}`, viewlevel: `${session.id} ${T("· 看解析（不重复）")}`, wrong: T("错题本"), star: T("收藏") }[session.kind]);
 
 function shell() {
   app.innerHTML = header(sessionTitle(),
-    `${session.kind === "exam" && !session.done ? '<span class="timer" role="timer"></span><button data-act="finish">交卷</button>' : ""}
-     ${session.kind === "practice" || session.kind === "level" ? '<button data-act="redo">重做</button>' : ""}<button data-go="#/">返回</button>`) +
+    `${session.kind === "exam" && !session.done ? '<span class="timer" role="timer"></span><button data-act="finish">' + T('交卷') + '</button>' : ""}
+     ${session.kind === "practice" || session.kind === "level" ? '<button data-act="redo">' + T('重做') + '</button>' : ""}<button data-go="#/">${T("返回")}</button>`) +
     `<main><div class="layout"><div class="card"><div id="top"></div><div id="body"></div></div>
      <aside class="palette"><span class="muted" id="prog"></span><div id="levels"></div></aside></div></main>`;
   show(session.i);
@@ -146,11 +146,11 @@ function show(i) {
   if (s.kind === "practice" || s.kind === "level") { store[s.kind][s.id].i = s.i; save(); }
   if (s.kind === "exam" && !s.done) { store.running[s.id].i = s.i; save(); }
   const { q, tid } = s.items[s.i];
-  $("#top").innerHTML = `<div class="row"><strong>第 ${s.i + 1} / ${s.items.length} 题</strong>
+  $("#top").innerHTML = `<div class="row"><strong>${T("第")} ${s.i + 1} / ${s.items.length} ${T("题")}</strong>
       <span class="tag ${lvClass(q.level)}">${esc(q.level)}</span>
       ${!["practice", "exam", "view"].includes(s.kind) ? `<span class="muted">${title(tid)} Q${q.n}</span>` : ""}
-      ${q.freq > 1 ? `<span class="muted">出现在 ${q.freq} 套</span>` : ""}
-      <span style="flex:1"></span><button data-act="star" aria-pressed="${!!store.star[q.id]}">${store.star[q.id] ? "★ 已收藏" : "☆ 收藏"}</button></div>
+      ${q.freq > 1 ? `<span class="muted">${T("出现在")} ${q.freq} ${T("套")}</span>` : ""}
+      <span style="flex:1"></span><button data-act="star" aria-pressed="${!!store.star[q.id]}">${store.star[q.id] ? T("★ 已收藏") : T("☆ 收藏")}</button></div>
     ${READING ? "" : audioHtml(s, q)}`;
   if (!READING) bindAudio(s);
   body();
@@ -159,10 +159,10 @@ function show(i) {
 }
 
 function audioHtml(s, q) {
-  return `${q.image ? `<img class="qimg" src="${esc(q.image)}" alt="第 ${s.i + 1} 题图片">` : ""}
+  return `${q.image ? `<img class="qimg" src="${esc(q.image)}" alt="${T("第")} ${s.i + 1} ${T("题图片")}">` : ""}
     ${q.audio ? `<audio controls preload="metadata" src="${esc(q.audio)}"></audio>` : "<audio hidden></audio>"}
-    <div class="note" id="aerr" ${q.audio ? "hidden" : ""}>${q.audio ? "没有找到音频文件。" : "这题没有音频文件。"}</div>
-    <div class="row tools"><button data-act="back5">⟲ 5 秒</button>
+    <div class="note" id="aerr" ${q.audio ? "hidden" : ""}>${q.audio ? T("没有找到音频文件。") : T("这题没有音频文件。")}</div>
+    <div class="row tools"><button data-act="back5">${T("⟲ 5 秒")}</button>
       ${s.kind === "exam" ? "" : [0.75, 0.9, 1, 1.25].map((r) => `<button class="rate" data-rate="${r}" aria-pressed="${store.rate === r}">${r}×</button>`).join("")}</div>`;
 }
 
@@ -195,24 +195,24 @@ function body() {
   }).join("");
   const last = s.i === s.items.length - 1;
   let mid = "";
-  if (!open && s.kind !== "exam") mid = `<button class="primary" data-act="check" ${s.pick ? "" : "disabled"}>确认答案</button>`;
+  if (!open && s.kind !== "exam") mid = `<button class="primary" data-act="check" ${s.pick ? "" : "disabled"}>${T("确认答案")}</button>`;
   if (open) mid = review(q, given);
   $("#body").innerHTML = `${READING ? passageHtml(q, open) : ""}<div class="opts">${opts}</div>${mid}
-    <div class="nav"><button data-act="prev" ${s.i ? "" : "disabled"}>← 上一题</button>
-    ${last && s.kind === "exam" && !s.done ? '<button class="primary" data-act="finish">交卷</button>' : `<button data-act="next" ${last ? "disabled" : ""}>下一题 →</button>`}</div>`;
+    <div class="nav"><button data-act="prev" ${s.i ? "" : "disabled"}>${T("← 上一题")}</button>
+    ${last && s.kind === "exam" && !s.done ? '<button class="primary" data-act="finish">' + T('交卷') + '</button>' : `<button data-act="next" ${last ? "disabled" : ""}>${T("下一题 →")}</button>`}</div>`;
 }
 
 function review(q, given) {
   const sec = (h, inner) => (inner ? `<div class="sec"><h3>${h}</h3>${inner}</div>` : "");
   const p = (t, cls = "") => (t ? `<p class="${cls}">${esc(t)}</p>` : "");
-  return `<strong>${session.view ? "" : !given ? "未作答，" : given === q.answer ? "✓ 答对了，" : "✗ 答错了，"}正确答案 ${esc(q.answer)}</strong>
-    ${q.voted && q.voted !== q.answer ? `<div class="note">用户投票最多的是 ${esc(q.voted)}，和网站答案不同，请自己判断。</div>` : ""}
-    ${q.myNote ? `<div class="mine"><strong>补充解析${q.myAnswer && q.myAnswer !== q.answer ? `：我认为答案是 ${esc(q.myAnswer)}（网站答案 ${esc(q.answer)}）` : ""}</strong><p>${esc(q.myNote)}</p></div>` : ""}
-    ${q.source ? `<div class="note">法语选项取自听力转写（${esc(q.source)}），可能有听错的词，以音频为准。</div>` : ""}
-    ${READING ? sec("文章翻译", p(q.passageEn)) : sec("原文", p(q.fr) + (q.en ? `<details><summary>英文翻译</summary>${p(q.en, "muted")}</details>` : ""))}
-    ${sec("关键句", p(q.key[0]) + p(q.key[1], "muted"))}
-    ${sec("解析", p(q.brief) + p(q.explain))}
-    ${sec("词汇", q.vocab.length ? `<dl class="vocab">${q.vocab.map(([a, b]) => `<div><dt>${esc(a)}</dt><dd>${esc(b)}</dd></div>`).join("")}</dl>` : "")}`;
+  return `<strong>${session.view ? "" : !given ? T("未作答，") : given === q.answer ? T("✓ 答对了，") : T("✗ 答错了，")}${T("正确答案")} ${esc(q.answer)}</strong>
+    ${q.voted && q.voted !== q.answer ? `<div class="note">${T("用户投票最多的是")} ${esc(q.voted)}${T("，和网站答案不同，请自己判断。")}</div>` : ""}
+    ${q.myNote ? `<div class="mine"><strong>${T("补充解析")}${q.myAnswer && q.myAnswer !== q.answer ? `${T("：我认为答案是")} ${esc(q.myAnswer)}${T("（网站答案")} ${esc(q.answer)}${T("）")}` : ""}</strong><p>${esc(q.myNote)}</p></div>` : ""}
+    ${q.source ? `<div class="note">${T("法语选项取自听力转写（")}${esc(q.source)}${T("），可能有听错的词，以音频为准。")}</div>` : ""}
+    ${READING ? sec(T("文章翻译"), p(q.passageEn)) : sec(T("原文"), p(q.fr) + (q.en ? `<details><summary>${T("英文翻译")}</summary>${p(q.en, "muted")}</details>` : ""))}
+    ${sec(T("关键句"), p(q.key[0]) + p(q.key[1], "muted"))}
+    ${sec(T("解析"), p(q.brief) + p(q.explain))}
+    ${sec(T("词汇"), q.vocab.length ? `<dl class="vocab">${q.vocab.map(([a, b]) => `<div><dt>${esc(a)}</dt><dd>${esc(b)}</dd></div>`).join("")}</dl>` : "")}`;
 }
 
 const lvClass = (lv) => "lv-" + (/^[ABC][12]$/.test(lv) ? lv : "none");
@@ -222,15 +222,15 @@ function palette() {
   const cell = (i) => {
     const { q } = s.items[i], a = s.answers[i], reveal = s.done || s.kind !== "exam";
     const c = a ? (reveal ? (a === q.answer ? "ok" : "no") : "done") : s.done ? "no" : "";
-    return `<button data-q="${i}" class="${c}${i === s.i ? " cur" : ""}${store.star[q.id] ? " star" : ""}" aria-label="第 ${i + 1} 题，${esc(q.level)}">${i + 1}</button>`;
+    return `<button data-q="${i}" class="${c}${i === s.i ? " cur" : ""}${store.star[q.id] ? " star" : ""}" aria-label="${T("第")} ${i + 1} ${T("题，")}${esc(q.level)}">${i + 1}</button>`;
   };
   const groups = {};
   s.items.forEach(({ q }, i) => (groups[q.level || "?"] ??= []).push(i));
   $("#levels").innerHTML = Object.keys(groups).sort().map((lv) => `
-    <div class="lvhead"><button class="tag ${lvClass(lv)}" data-q="${groups[lv][0]}" aria-label="跳到 ${esc(lv)} 第一题">${esc(lv)}</button>
+    <div class="lvhead"><button class="tag ${lvClass(lv)}" data-q="${groups[lv][0]}" aria-label="${T("跳到")} ${esc(lv)} ${T("第一题")}">${esc(lv)}</button>
       <span class="muted">${s.view ? "" : `${groups[lv].filter((i) => s.answers[i]).length}/`}${groups[lv].length}</span></div>
     <div class="grid">${groups[lv].map(cell).join("")}</div>`).join("");
-  $("#prog").textContent = s.view ? `共 ${s.items.length} 题` : `已答 ${Object.keys(s.answers).length} / ${s.items.length}`;
+  $("#prog").textContent = s.view ? `${T("共")} ${s.items.length} ${T("题")}` : `${T("已答")} ${Object.keys(s.answers).length} / ${s.items.length}`;
 }
 
 function record(tid, q, ok) {
@@ -271,7 +271,7 @@ function finish(auto) {
   const s = session;
   if (s.done) return;
   const blank = s.items.length - Object.keys(s.answers).length;
-  if (!auto && !confirm(blank ? `还有 ${blank} 题没答，确定交卷？` : "确定交卷？")) return;
+  if (!auto && !confirm(blank ? `${T("还有")} ${blank} ${T("题没答，确定交卷？")}` : T("确定交卷？"))) return;
   clearInterval(ticker);
   s.done = true;
   let score = 0, correct = 0;
@@ -294,13 +294,13 @@ function result(score, correct) {
     r[1]++;
     if (s.answers[i] === q.answer) r[0]++;
   });
-  app.innerHTML = header(`${title(s.id)} · 成绩`, '<button data-go="#/">返回</button>') + `<main>
-    <div class="summary"><div><b>${score} / 699</b><span class="muted">估算分数</span></div>
-    <div><b>NCLC ${nclc(score)}</b><span class="muted">估算等级</span></div>
-    <div><b>${correct} / ${s.items.length}</b><span class="muted">答对</span></div></div>
-    <h2>各级别</h2><table><tr><th>级别</th><th>答对</th><th>总数</th></tr>
+  app.innerHTML = header(`${title(s.id)} ${T("· 成绩")}`, '<button data-go="#/">' + T('返回') + '</button>') + `<main>
+    <div class="summary"><div><b>${score} / 699</b><span class="muted">${T("估算分数")}</span></div>
+    <div><b>NCLC ${nclc(score)}</b><span class="muted">${T("估算等级")}</span></div>
+    <div><b>${correct} / ${s.items.length}</b><span class="muted">${T("答对")}</span></div></div>
+    <h2>${T("各级别")}</h2><table><tr><th>${T("级别")}</th><th>${T("答对")}</th><th>${T("总数")}</th></tr>
     ${Object.entries(by).map(([l, [a, n]]) => `<tr><td>${esc(l)}</td><td>${a}</td><td>${n}</td></tr>`).join("")}</table>
-    <p><button class="primary" data-act="review">逐题查看解析</button></p></main>`;
+    <p><button class="primary" data-act="review">${T("逐题查看解析")}</button></p></main>`;
 }
 
 // ---------- 事件 ----------
@@ -314,19 +314,19 @@ const acts = {
     if (store.star[q.id]) delete store.star[q.id]; else store.star[q.id] = { t: tid, n: q.n };
     save();
     const b = $('[data-act="star"]');
-    b.textContent = store.star[q.id] ? "★ 已收藏" : "☆ 收藏";
+    b.textContent = store.star[q.id] ? T("★ 已收藏") : T("☆ 收藏");
     b.setAttribute("aria-pressed", !!store.star[q.id]);
     palette();
   },
   redo() {
-    if (!confirm("清空这里的练习作答，重新开始？")) return;
+    if (!confirm(T("清空这里的练习作答，重新开始？"))) return;
     app.querySelector("audio")?.pause();
     const { kind, id } = session;
     store[kind][id] = { answers: {}, i: 0 };
     save(); start(kind, id);
   },
   reset() {
-    if (!confirm("清空所有练习、模考、错题和收藏？无法恢复。")) return;
+    if (!confirm(T("清空所有练习、模考、错题和收藏？无法恢复。"))) return;
     Object.assign(store, { practice: {}, level: {}, exams: {}, running: {}, wrong: {}, star: {} });
     save(); home();
   },
@@ -364,7 +364,7 @@ function route() {
   session = null;
   const [, kind, id] = location.hash.split("/");
   if (["practice", "level", "view", "viewlevel", "exam", "wrong", "star"].includes(kind))
-    start(kind, id).catch((e) => { app.innerHTML = header("出错了", '<button data-go="#/">返回</button>') + `<main>${esc(e.message)}</main>`; });
+    start(kind, id).catch((e) => { app.innerHTML = header(T("出错了"), '<button data-go="#/">' + T('返回') + '</button>') + `<main>${esc(e.message)}</main>`; });
   else home();
 }
 addEventListener("hashchange", route);
