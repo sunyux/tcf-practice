@@ -127,7 +127,7 @@
     try {
       const cloud = await cloudState(), m = meta(), changed = KEYS.filter((k) => cloud[k] && cloud[k].rev !== (m.rev[k] ?? ""));
       if (!changed.length) return;
-      if (/^(#\/?(lr|ws|ph)?)?$/.test(location.hash)) return location.reload();
+      if (/^(#\/?(w|ph)?)?$/.test(location.hash)) return location.reload();
       changed.forEach((k) => stopped.add(k)); banner();
     } catch { /* 断网 */ }
   }

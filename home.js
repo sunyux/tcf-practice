@@ -47,8 +47,8 @@ function speaking() {
 function vocab() {
   const m = window.TCF_META_VOCAB, s = read("tcf.vocab.v1");
   const ok = Object.values(s.mem ?? {}).filter((x) => x.b > 0).length, due = Object.values(s.mem ?? {}).filter((x) => x.d <= Date.now()).length;
-  return panel("vocab.html", "词汇库", `听力+阅读 ${m.lr} 词，写作+口语 ${m.ws} 词，短语 ${m.phrases}`,
-    [fact(ok, "认识"), fact(due, "该复习")], "", [["vocab.html#/lr", "听力 + 阅读", 1], ["vocab.html#/ws", "写作 + 口语"], ["vocab.html#/ph", "短语"]]);
+  return panel("vocab.html", "词汇库", `听说读写真题里的词，可多选筛选；短语 ${m.phrases}`,
+    [fact(ok, "认识"), fact(due, "该复习")], "", [["vocab.html#/w", "单词", 1], ["vocab.html#/ph", "短语"]]);
 }
 function home() {
   if (!window.TCF_L || !window.TCF_R || !window.TCF_META_WRITING || !window.TCF_META_SPEAKING || !window.TCF_META_VOCAB) return;   // 手机版还没导入题库

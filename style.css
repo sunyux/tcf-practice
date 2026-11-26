@@ -141,6 +141,8 @@ details.sec summary{cursor:pointer}
 .tabs .btn{padding:6px 14px}
 .vlevels{display:grid;gap:8px;margin-top:8px}
 .vlevel{display:grid;grid-template-columns:5.2em minmax(60px,1fr) 5.5em auto;gap:10px;align-items:center}.vlevel .tag{justify-self:start}.vlevel .bar{margin:0}.vlevel .num{text-align:right;font-variant-numeric:tabular-nums}
+.chips{display:inline-flex;flex-wrap:wrap;gap:0}.chips button{border-radius:0;margin-left:-1px;padding:6px 12px}.chips button:first-child{border-radius:8px 0 0 8px;margin-left:0}.chips button:last-child{border-radius:0 8px 8px 0}.chips button[aria-pressed=true]{background:var(--main);color:var(--card);border-color:var(--main)}
+.chips button[aria-pressed=true]+button[aria-pressed=true]{border-left-color:var(--main-soft)}#sum{margin-top:12px}
 .vgo{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.vgo .btn{padding:6px 14px}.vgo small{opacity:.75;font-weight:400}.vgo select{padding:6px 8px}
 .vbtns{display:flex;gap:6px;flex-wrap:wrap}.vbtns .btn{padding:4px 12px;font-size:14px}.opts-row{gap:8px}.opts-row select{padding:4px 8px;font-size:14px}
 .vzh small{display:block}.exline{font-size:18px;line-height:1.6}.okc{color:var(--main);font-weight:600}.badc{color:var(--bad);font-weight:600}
